@@ -23,7 +23,7 @@ public class ReportService {
     private ResourceLoader resourceLoader;
 
     @Autowired
-    private DataSource dataSource; // Inyección del DataSource configurado en application.properties
+    private DataSource dataSource;
 
     public byte[] generarReport(String reportName) throws Exception {
         InputStream file = resourceLoader.getResource("classpath:reports/" + reportName + ".jasper").getInputStream();
@@ -44,7 +44,7 @@ public class ReportService {
                      "SELECT " +
                              "    ra.id AS id_registro, " +
                              "    u.nombre AS nombre_usuario, " +
-                             "    DATE_FORMAT(ra.fecha_hora, '%Y-%m-%d %H:%i:%s') AS fecha_hora, " +
+                             "    ra.fecha_hora AS fecha_hora, " +
                              "    ra.zona_acceso, " +
                              "    CASE ra.resultado " +
                              "        WHEN 1 THEN 'Exitoso' " +
@@ -56,12 +56,10 @@ public class ReportService {
                              "    db_biometria.registros_acceso AS ra " +
                              "INNER JOIN " +
                              "    db_biometria.usuarios AS u ON ra.id_usuario = u.id_usuario " +
-                             "ORDER BY " +
-                             "    id_registro ASC"
+                             "ORDER BY ra.fecha_hora DESC"
              )) {
             while (resultSet.next()) {
                 Map<String, Object> data = new HashMap<>();
-                data.put("id_registro", resultSet.getInt("id_registro"));
                 data.put("nombre_usuario", resultSet.getString("nombre_usuario"));
                 data.put("fecha_hora", resultSet.getString("fecha_hora"));
                 data.put("zona_acceso", resultSet.getString("zona_acceso"));
