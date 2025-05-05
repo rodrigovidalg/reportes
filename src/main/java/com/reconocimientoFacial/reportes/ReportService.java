@@ -10,6 +10,8 @@ import org.springframework.stereotype.Service;
 import javax.sql.DataSource;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -126,6 +128,7 @@ public class ReportService {
         return dataList;
     }
 
+    //---------------------------Reporte Visitantes----------------
     public byte[] generarReporteVisitantes(String reportName) throws Exception {
         InputStream file = resourceLoader.getResource("classpath:reports/" + reportName + ".jasper").getInputStream();
         JasperReport jasperReport = (JasperReport) JRLoader.loadObject(file);
@@ -136,7 +139,6 @@ public class ReportService {
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
-
     private List<Map<String, Object>> getDataFromDatabaseVisitantes() throws SQLException {
         List<Map<String, Object>> dataList = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
@@ -168,6 +170,65 @@ public class ReportService {
                 data.put("estado_acceso", resultSet.getString("estado_acceso"));
                 data.put("metodo", resultSet.getString("metodo"));
                 dataList.add(data);
+            }
+        }
+        return dataList;
+    }
+//new java.io.ByteArrayInputStream($F{imagen})
+    /*------------------------Reporte Individual Visitantes--------------*/
+    public byte[] generarReporteIndividualVisitante(int idRegistro, String reportName) throws Exception {
+        try {
+            InputStream file = resourceLoader.getResource("classpath:reports/" + reportName + ".jasper").getInputStream();
+            JasperReport jasperReport = (JasperReport) JRLoader.loadObject(file);
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("IdRegistro", idRegistro); // Pasar el ID como parámetro
+
+            List<Map<String, Object>> reportData = getDataForIndividualReportVisitante(idRegistro);
+
+            JRBeanCollectionDataSource dataSourceJR = new JRBeanCollectionDataSource(reportData);
+            JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSourceJR);
+            return JasperExportManager.exportReportToPdf(jasperPrint);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
+    }
+
+    private List<Map<String, Object>> getDataForIndividualReportVisitante(int idRegistro) throws SQLException {
+        List<Map<String, Object>> dataList = new ArrayList<>();
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(
+                     "SELECT  " +
+                             "    rav.id AS id_registro, " +
+                             "    CONCAT(v.nombres, ' ', v.apellidos) AS nombre_completo,  " +
+                             "    rav.fecha_hora AS fecha_hora,  " +
+                             "    d.nombre AS zona_acceso,  " +
+                             "    CASE rav.resultado  " +
+                             "        WHEN 0 THEN 'Fallido'  " +
+                             "        WHEN 1 THEN 'Exitoso'  " +
+                             "        ELSE 'Desconocido'  " +
+                             "    END AS estado_acceso,  " +
+                             "    m.metodo AS metodo,  " +
+                             "    rav.encoding_facial AS imagen " + // Incluimos la imagen
+                             "FROM registros_acceso_visitante AS rav  " +
+                             "INNER JOIN visitantes AS v ON rav.id_visitante = v.id_visitante  " +
+                             "INNER JOIN departamentos AS d ON rav.zona_acceso = d.id_departamento  " +
+                             "INNER JOIN metodos AS m ON rav.id_metodo = m.id_metodo " +
+                             "WHERE rav.id = ?"
+             )) {
+            preparedStatement.setInt(1, idRegistro);
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    Map<String, Object> data = new HashMap<>();
+                    data.put("id_registro", resultSet.getInt("id_registro"));
+                    data.put("nombre_completo", resultSet.getString("nombre_completo"));
+                    data.put("fecha_hora", resultSet.getString("fecha_hora"));
+                    data.put("zona_acceso", resultSet.getString("zona_acceso"));
+                    data.put("estado_acceso", resultSet.getString("estado_acceso"));
+                    data.put("metodo", resultSet.getString("metodo"));
+                    data.put("imagen", resultSet.getBytes("imagen")); // Obtenemos la imagen como byte[]
+                    dataList.add(data);
+                }
             }
         }
         return dataList;
