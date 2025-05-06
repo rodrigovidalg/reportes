@@ -32,7 +32,7 @@ public class ReportController {
     @GetMapping("/ReporteVisitantes")
     public ResponseEntity<byte[]> generarReporteVisitantes() {
         try{
-            byte[] report = reportService.generarReporteVisitantes("Reporte_general_registros_visitantes"); // Llamar al nuevo método en ReportService
+            byte[] report = reportService.generarReporteVisitantes("Reporte_general_visitantes"); // Llamar al nuevo método en ReportService
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.add("Content-Disposition", "inline; filename=ReporteVisitantes.pdf");
@@ -45,7 +45,7 @@ public class ReportController {
     @GetMapping("/reporteIndividualV")
     public ResponseEntity<byte[]> generarReporteIndividualVisitante(@RequestParam("id") int id) {
         try {
-            byte[] report = reportService.generarReporteIndividualVisitante(id, "Registro_individual_visitantes2"); // Nuevo método en ReportService
+            byte[] report = reportService.generarReporteIndividualVisitante(id, "Registro_individual_visitantes"); // Nuevo método en ReportService
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.add("Content-Disposition", "inline; filename=ReporteIndividualVisitante.pdf");
@@ -55,5 +55,30 @@ public class ReportController {
         }
     }
 
+    /*----------------------Reportes Usuario------------*/
+    @GetMapping("/reportU")
+    public ResponseEntity<byte[]> generarReporteUsuariosGeneral() {
+        try{
+            byte[] report = reportService.generarReporteUsuariosGeneral("Registro_general_usuarios"); // Llamar al método en ReportService
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.add("Content-Disposition", "inline; filename=ReporteUsuariosGeneral.pdf");
+            return new ResponseEntity<>(report, headers, HttpStatus.OK);
+        }catch (Exception e){
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
+    @GetMapping("/reporteIndividualUsuario")
+    public ResponseEntity<byte[]> generarReporteIndividualUsuario(@RequestParam("id") int id) {
+        try {
+            byte[] report = reportService.generarReporteIndividualUsuario(id, "Registro_individual_usuario"); // Llamar al método en ReportService
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_PDF);
+            headers.add("Content-Disposition", "inline; filename=ReporteIndividualUsuario.pdf");
+            return new ResponseEntity<>(report, headers, HttpStatus.OK);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 }
